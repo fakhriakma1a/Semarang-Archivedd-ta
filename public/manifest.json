@@ -1,0 +1,35 @@
+{
+  "name": "Semarang Archived - Simpan Tempat Menarik",
+  "short_name": "Semarang Archived",
+  "description": "Progressive Web App untuk mengarsipkan tempat-tempat menarik di Kota Semarang",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2ba89f",
+  "orientation": "portrait-primary",
+  "lang": "id",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "lifestyle", "entertainment"],
+  "screenshots": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "540x720",
+      "type": "image/svg+xml"
+    }
+  ]
+}
