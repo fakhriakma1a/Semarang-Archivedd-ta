@@ -22,12 +22,10 @@ const App = () => {
     setShowSplash(false);
   };
 
-  // Splash screen ditampilkan saat pertama kali load
   if (showSplash) {
     return <Splash onComplete={handleSplashComplete} />;
   }
 
-  // Setelah splash selesai, tampilkan aplikasi utama
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

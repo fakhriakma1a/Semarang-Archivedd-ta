@@ -9,7 +9,7 @@ export const places: Place[] = [
     address: 'Jl. Pemuda No.160, Sekayu, Kec. Semarang Tengah',
     rating: 4.5,
     category: 'historical_place',
-    image: 'https://images.unsplash.com/photo-1555400082-33e74d5e7dc9?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1651890053473-b25f7e1672dd?q=80',
     openingHours: '08:00 - 21:00',
     ticketPrice: 'Rp 10.000',
     facilities: ['Parkir', 'Toilet', 'WiFi', 'Museum'],
