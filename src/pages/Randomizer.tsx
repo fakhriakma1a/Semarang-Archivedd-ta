@@ -1,33 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dices, MapPin, Star, Clock, DollarSign, Heart, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Place, PlaceCategory } from '@/types/place';
+import { PlaceCategory } from '@/types/place';
 import { categories } from '@/data/categories';
 import { cn } from '@/lib/utils';
-import { fetchPlaces } from '@/lib/supabase-helpers';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useRandomPlace, useToggleFavorite, useToggleVisited } from '@/hooks/usePlaces';
+import type { Database } from '@/integrations/supabase/types';
+
+type Place = Database['public']['Tables']['places']['Row'];
 
 const Randomizer = () => {
-  const [places, setPlaces] = useState<Place[]>([]);
+  const navigate = useNavigate();
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>(
     categories.map((c) => c.id)
   );
-  const [currentPlace, setCurrentPlace] = useState<Place | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'cafe' | 'restaurant' | 'mall' | 'historical_place' | 'all'>('all');
   const [history, setHistory] = useState<Place[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  useEffect(() => {
-    loadPlaces();
-  }, []);
-
-  const loadPlaces = async () => {
-    const data = await fetchPlaces();
-    setPlaces(data);
-  };
+  // Use hooks
+  const { data: currentPlace, refetch: refetchRandom, isFetching } = useRandomPlace(selectedCategory);
+  const toggleFavoriteMutation = useToggleFavorite();
+  const toggleVisitedMutation = useToggleVisited();
 
   const handleToggleCategory = (categoryId: PlaceCategory) => {
     setSelectedCategories((prev) =>
@@ -46,72 +45,53 @@ const Randomizer = () => {
   };
 
   const handleRandomize = () => {
-    if (selectedCategories.length === 0) return;
+    if (selectedCategories.length === 0) {
+      toast.error('Pilih minimal satu kategori');
+      return;
+    }
 
     setIsAnimating(true);
+    
+    // Set selected category for query
+    if (selectedCategories.length === categories.length) {
+      setSelectedCategory('all');
+    } else if (selectedCategories.length === 1) {
+      setSelectedCategory(selectedCategories[0]);
+    } else {
+      setSelectedCategory('all');
+    }
+
+    // Animate and refetch
     setTimeout(() => {
-      const filteredPlaces = places.filter((p) =>
-        selectedCategories.includes(p.category)
-      );
-      
-      if (filteredPlaces.length > 0) {
-        const randomIndex = Math.floor(Math.random() * filteredPlaces.length);
-        const randomPlace = filteredPlaces[randomIndex];
-        setCurrentPlace(randomPlace);
-        
-        // Add to history (keep last 5)
-        setHistory((prev) => {
-          const newHistory = [randomPlace, ...prev.filter(p => p.id !== randomPlace.id)];
-          return newHistory.slice(0, 5);
-        });
-      }
+      refetchRandom();
       setIsAnimating(false);
     }, 800);
   };
 
+  // Update history when currentPlace changes
+  if (currentPlace && !history.find(p => p.id === currentPlace.id)) {
+    setHistory((prev) => {
+      const newHistory = [currentPlace, ...prev];
+      return newHistory.slice(0, 5);
+    });
+  }
+
   const handleToggleVisited = async () => {
     if (!currentPlace) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({
-          visited: !currentPlace.visited,
-          visited_date: !currentPlace.visited ? new Date().toISOString() : null,
-        })
-        .eq('id', currentPlace.id);
-
-      if (error) throw error;
-      
-      const data = await fetchPlaces();
-      setPlaces(data);
-      setCurrentPlace(data.find((p) => p.id === currentPlace.id) || null);
-      toast.success(currentPlace.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
-    } catch (error) {
-      console.error('Error toggling visited:', error);
-      toast.error('Gagal memperbarui status');
-    }
+    toggleVisitedMutation.mutate({
+      id: currentPlace.id,
+      visited: !currentPlace.visited,
+    });
   };
 
   const handleToggleFavorite = async () => {
     if (!currentPlace) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({ is_favorite: !currentPlace.isFavorite })
-        .eq('id', currentPlace.id);
-
-      if (error) throw error;
-      
-      const data = await fetchPlaces();
-      setPlaces(data);
-      setCurrentPlace(data.find((p) => p.id === currentPlace.id) || null);
-      toast.success(currentPlace.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error('Gagal memperbarui favorit');
-    }
+    toggleFavoriteMutation.mutate({
+      id: currentPlace.id,
+      isFavorite: !currentPlace.is_favorite,
+    });
   };
 
   const category = currentPlace
@@ -171,10 +151,10 @@ const Randomizer = () => {
           size="lg"
           className="gradient-hero border-0 text-lg px-8 py-6"
           onClick={handleRandomize}
-          disabled={selectedCategories.length === 0 || isAnimating}
+          disabled={selectedCategories.length === 0 || isAnimating || isFetching}
         >
-          <Dices className={cn('mr-2 w-5 h-5', isAnimating && 'animate-spin')} />
-          {isAnimating ? 'Mengacak...' : 'ACAK TEMPAT!'}
+          <Dices className={cn('mr-2 w-5 h-5', (isAnimating || isFetching) && 'animate-spin')} />
+          {isAnimating || isFetching ? 'Mengacak...' : 'ACAK TEMPAT!'}
         </Button>
       </div>
 
@@ -223,16 +203,16 @@ const Randomizer = () => {
                 <MapPin className="w-4 h-4 mr-2 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <span>{currentPlace.address}</span>
               </div>
-              {currentPlace.openingHours && (
+              {currentPlace.opening_hours && (
                 <div className="flex items-center text-sm">
                   <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <span>{currentPlace.openingHours}</span>
+                  <span>{currentPlace.opening_hours}</span>
                 </div>
               )}
-              {currentPlace.ticketPrice && (
+              {currentPlace.ticket_price && (
                 <div className="flex items-center text-sm">
                   <DollarSign className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <span>{currentPlace.ticketPrice}</span>
+                  <span>{currentPlace.ticket_price}</span>
                 </div>
               )}
             </div>
@@ -250,17 +230,17 @@ const Randomizer = () => {
                 variant="outline"
                 className={cn(
                   'flex-1',
-                  currentPlace.isFavorite && 'border-red-500 text-red-500'
+                  currentPlace.is_favorite && 'border-red-500 text-red-500'
                 )}
                 onClick={handleToggleFavorite}
               >
                 <Heart
                   className={cn(
                     'mr-2 w-4 h-4',
-                    currentPlace.isFavorite && 'fill-current'
+                    currentPlace.is_favorite && 'fill-current'
                   )}
                 />
-                {currentPlace.isFavorite ? 'Favorit' : 'Tambah Favorit'}
+                {currentPlace.is_favorite ? 'Favorit' : 'Tambah Favorit'}
               </Button>
               <Button
                 variant="outline"
@@ -299,7 +279,7 @@ const Randomizer = () => {
               <div
                 key={place.id}
                 className="flex-shrink-0 w-48 snap-start cursor-pointer"
-                onClick={() => setCurrentPlace(place)}
+                onClick={() => navigate(`/place/${place.id}`)}
               >
                 <div className="aspect-video rounded-lg overflow-hidden mb-2">
                   <img

@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { User, MapPin, Heart, Star, Trash2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceCard } from '@/components/PlaceCard';
-import { Place } from '@/types/place';
 import { categories } from '@/data/categories';
-import { fetchPlaces, calculateStats } from '@/lib/supabase-helpers';
-import { supabase } from '@/integrations/supabase/client';
+import { usePlaces, usePlaceStatistics, useToggleFavorite, useToggleVisited, useClearAllPlaces } from '@/hooks/usePlaces';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,92 +19,68 @@ import {
 import { toast } from 'sonner';
 
 const Profile = () => {
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    visited: 0,
-    favorites: 0,
-    avgRating: '0',
-    favoriteCategory: '',
-  });
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    const data = await fetchPlaces();
-    setPlaces(data);
-    setStats(calculateStats(data));
-  };
+  // Use hooks
+  const { data: places = [], isLoading } = usePlaces();
+  const { data: stats } = usePlaceStatistics();
+  const toggleFavoriteMutation = useToggleFavorite();
+  const toggleVisitedMutation = useToggleVisited();
+  const clearAllPlacesMutation = useClearAllPlaces();
 
   const handleToggleVisited = async (id: string) => {
     const place = places.find((p) => p.id === id);
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({
-          visited: !place.visited,
-          visited_date: !place.visited ? new Date().toISOString() : null,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadData();
-      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
-    } catch (error) {
-      console.error('Error toggling visited:', error);
-      toast.error('Gagal memperbarui status');
-    }
+    toggleVisitedMutation.mutate({
+      id,
+      visited: !place.visited,
+    });
   };
 
   const handleToggleFavorite = async (id: string) => {
     const place = places.find((p) => p.id === id);
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({ is_favorite: !place.isFavorite })
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadData();
-      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error('Gagal memperbarui favorit');
-    }
+    toggleFavoriteMutation.mutate({
+      id,
+      isFavorite: !place.is_favorite,
+    });
   };
 
   const handleClearData = async () => {
-    try {
-      const { error } = await supabase.from('places').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      if (error) throw error;
-      await loadData();
-      toast.success('Semua data berhasil dihapus!');
-    } catch (error) {
-      console.error('Error clearing data:', error);
-      toast.error('Gagal menghapus data');
-    }
+    clearAllPlacesMutation.mutate();
   };
 
-  const recentVisits = places
-    .filter((p) => p.visited && p.visitedDate)
-    .sort((a, b) => {
-      const dateA = a.visitedDate ? new Date(a.visitedDate).getTime() : 0;
-      const dateB = b.visitedDate ? new Date(b.visitedDate).getTime() : 0;
+  const recentVisits = useMemo(() => {
+    return places
+      .filter((p) => p.visited && p.visited_date)
+      .sort((a, b) => {
+        const dateA = a.visited_date ? new Date(a.visited_date).getTime() : 0;
+        const dateB = b.visited_date ? new Date(b.visited_date).getTime() : 0;
       return dateB - dateA;
     })
     .slice(0, 6);
+  }, [places]);
 
-  const favorites = places.filter((p) => p.isFavorite);
+  const favorites = useMemo(() => {
+    return places.filter((p) => p.is_favorite);
+  }, [places]);
 
-  const favoriteCategoryInfo = categories.find(
-    (c) => c.id === stats.favoriteCategory
-  );
+  const favoriteCategoryInfo = useMemo(() => {
+    if (!stats?.byCategory) return null;
+    const entries = Object.entries(stats.byCategory);
+    if (entries.length === 0) return null;
+    const sorted = entries.sort(([, a], [, b]) => (b as number) - (a as number));
+    const [topCategoryId] = sorted[0];
+    return categories.find((c) => c.id === topCategoryId);
+  }, [stats]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -117,10 +91,35 @@ const Profile = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold">Profile Saya</h1>
-            <p className="text-muted-foreground">Statistik & tempat favorit</p>
+            <p className="text-muted-foreground">Statistik & tempat favorit saya</p>
           </div>
         </div>
       </div>
+
+      {/* User Identity Card */}
+      <Card className="mb-8 shadow-card border-primary/20">
+        <CardHeader>
+          <CardTitle>
+            Identitas Pengguna
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Nama</p>
+              <p className="font-semibold">Muhammad Fakhri Akmal Arief</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">NIM</p>
+              <p className="font-semibold">21120123140172</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Group</p>
+              <p className="font-semibold">10 - Shift 2</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -129,7 +128,7 @@ const Profile = () => {
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
               <MapPin className="w-6 h-6 text-primary" />
             </div>
-            <div className="text-3xl font-bold mb-1">{stats.visited}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.visited || 0}</div>
             <div className="text-sm text-muted-foreground">Dikunjungi</div>
           </CardContent>
         </Card>
@@ -138,7 +137,7 @@ const Profile = () => {
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
               <Heart className="w-6 h-6 text-red-500" />
             </div>
-            <div className="text-3xl font-bold mb-1">{stats.favorites}</div>
+            <div className="text-3xl font-bold mb-1">{stats?.favorites || 0}</div>
             <div className="text-sm text-muted-foreground">Favorit</div>
           </CardContent>
         </Card>
@@ -147,8 +146,8 @@ const Profile = () => {
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-amber-100 flex items-center justify-center">
               <Star className="w-6 h-6 text-amber-500" />
             </div>
-            <div className="text-3xl font-bold mb-1">{stats.avgRating}</div>
-            <div className="text-sm text-muted-foreground">Rating Rata2</div>
+            <div className="text-3xl font-bold mb-1">{stats?.total || 0}</div>
+            <div className="text-sm text-muted-foreground">Total Tempat</div>
           </CardContent>
         </Card>
         <Card className="shadow-card">
@@ -247,7 +246,7 @@ const Profile = () => {
             <p className="font-semibold mb-1">Semarang Archived v1.0.0</p>
             <p>Progressive Web App</p>
             <p className="mt-2">
-              Dibuat dengan ❤️ untuk Kota Semarang
+              Dibuat untuk Tugas Akhir Praktikum Pemrograman Perangkat Bergerak 2025.
             </p>
           </div>
         </CardContent>

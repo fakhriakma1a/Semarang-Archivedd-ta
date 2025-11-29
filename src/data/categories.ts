@@ -9,7 +9,7 @@ export const categories: CategoryInfo[] = [
   },
   {
     id: 'restaurant',
-    name: 'Restaurant',
+    name: 'Restoran',
     icon: 'UtensilsCrossed',
     emoji: '🍽️',
   },

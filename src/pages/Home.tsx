@@ -1,76 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Star, Building2, Dices } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceCard } from '@/components/PlaceCard';
-import { Place } from '@/types/place';
-import { fetchPlaces, calculateStats } from '@/lib/supabase-helpers';
-import { supabase } from '@/integrations/supabase/client';
+import { usePlaces, usePlaceStatistics, useToggleFavorite, useToggleVisited } from '@/hooks/usePlaces';
 import { toast } from 'sonner';
 
 const Home = () => {
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    visited: 0,
-    favorites: 0,
-    avgRating: '0',
-  });
-
-  useEffect(() => {
-    loadPlaces();
-  }, []);
-
-  const loadPlaces = async () => {
-    const data = await fetchPlaces();
-    setPlaces(data);
-    setStats(calculateStats(data));
-  };
+  // Use hooks
+  const { data: places = [], isLoading } = usePlaces();
+  const { data: stats } = usePlaceStatistics();
+  const toggleFavoriteMutation = useToggleFavorite();
+  const toggleVisitedMutation = useToggleVisited();
 
   const handleToggleVisited = async (id: string) => {
     const place = places.find((p) => p.id === id);
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({
-          visited: !place.visited,
-          visited_date: !place.visited ? new Date().toISOString() : null,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadPlaces();
-      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
-    } catch (error) {
-      console.error('Error toggling visited:', error);
-      toast.error('Gagal memperbarui status');
-    }
+    toggleVisitedMutation.mutate({
+      id,
+      visited: !place.visited,
+    });
   };
 
   const handleToggleFavorite = async (id: string) => {
     const place = places.find((p) => p.id === id);
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({ is_favorite: !place.isFavorite })
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadPlaces();
-      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error('Gagal memperbarui favorit');
-    }
+    toggleFavoriteMutation.mutate({
+      id,
+      isFavorite: !place.is_favorite,
+    });
   };
 
-  const featuredPlaces = places
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 6);
+  const featuredPlaces = useMemo(() => {
+    return places
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 6);
+  }, [places]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -121,7 +96,7 @@ const Home = () => {
                 <Building2 className="w-6 h-6 text-primary" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">
-                {stats.total}
+                {stats?.total || 0}
               </div>
               <div className="text-sm text-muted-foreground">Total Tempat</div>
             </div>
@@ -130,7 +105,7 @@ const Home = () => {
                 <MapPin className="w-6 h-6 text-secondary" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">
-                {stats.visited}
+                {stats?.visited || 0}
               </div>
               <div className="text-sm text-muted-foreground">
                 Sudah Dikunjungi
@@ -141,7 +116,10 @@ const Home = () => {
                 <Star className="w-6 h-6 text-accent" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1">
-                {stats.avgRating}
+                {places.length > 0 
+                  ? (places.reduce((sum, p) => sum + (p.rating || 0), 0) / places.length).toFixed(1)
+                  : '0.0'
+                }
               </div>
               <div className="text-sm text-muted-foreground">Rating Rata2</div>
             </div>

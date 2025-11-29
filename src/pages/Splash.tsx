@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { MapPin } from 'lucide-react';
 
 interface SplashProps {
   onComplete: () => void;
@@ -19,7 +18,7 @@ const Splash = ({ onComplete }: SplashProps) => {
       <div className="text-center animate-fade-in">
         <div className="mb-8 animate-slide-up">
           <div className="w-24 h-24 mx-auto mb-4 rounded-3xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-2xl">
-            <MapPin className="w-12 h-12 text-white animate-pulse" />
+            <img src="/LOGOSA.png" alt="Semarang Archived Logo" className="w-16 h-16 object-contain animate-pulse" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             Semarang Archived

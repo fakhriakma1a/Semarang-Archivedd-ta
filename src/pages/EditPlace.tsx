@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Plus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { usePlace, useUpdatePlace } from '@/hooks/usePlaces';
 
 const placeSchema = z.object({
   name: z.string().min(1, 'Nama tempat harus diisi').max(200),
@@ -17,6 +17,7 @@ const placeSchema = z.object({
   address: z.string().min(5, 'Alamat harus diisi').max(500),
   category: z.enum(['cafe', 'restaurant', 'mall', 'historical_place']),
   image: z.string().url('URL gambar tidak valid'),
+  rating: z.number().min(0, 'Rating minimal 0').max(5, 'Rating maksimal 5'),
   openingHours: z.string().max(200).optional(),
   ticketPrice: z.string().max(200).optional(),
 });
@@ -24,8 +25,8 @@ const placeSchema = z.object({
 const EditPlace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const { data: place, isLoading: initialLoading, error } = usePlace(id);
+  const updatePlaceMutation = useUpdatePlace();
   const [facilities, setFacilities] = useState<string[]>([]);
   const [newFacility, setNewFacility] = useState('');
   
@@ -35,47 +36,38 @@ const EditPlace = () => {
     address: '',
     category: 'cafe' as 'cafe' | 'restaurant' | 'mall' | 'historical_place',
     image: '',
+    rating: 0,
     openingHours: '',
     ticketPrice: '',
   });
 
   useEffect(() => {
-    loadPlace();
-  }, [id]);
+    if (place) {
+      setFormData({
+        name: place.name || '',
+        description: place.description || '',
+        address: place.address || '',
+        category: place.category || 'cafe',
+        image: place.image || '',
+        rating: place.rating || 0,
+        openingHours: place.opening_hours || '',
+        ticketPrice: place.ticket_price || '',
+      });
+      setFacilities(place.facilities || []);
+    }
+  }, [place]);
 
-  const loadPlace = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('places')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setFormData({
-          name: data.name,
-          description: data.description,
-          address: data.address,
-          category: data.category,
-          image: data.image,
-          openingHours: data.opening_hours || '',
-          ticketPrice: data.ticket_price || '',
-        });
-        setFacilities(data.facilities || []);
-      }
-    } catch (error) {
-      console.error('Error loading place:', error);
+  useEffect(() => {
+    if (error) {
       toast.error('Gagal memuat data tempat');
       navigate('/places');
-    } finally {
-      setInitialLoading(false);
     }
-  };
+  }, [error, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!id) return;
     
     try {
       placeSchema.parse(formData);
@@ -85,34 +77,28 @@ const EditPlace = () => {
         return;
       }
     }
-
-    setLoading(true);
     
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({
+    updatePlaceMutation.mutate(
+      {
+        id,
+        data: {
           name: formData.name,
           description: formData.description,
           address: formData.address,
           category: formData.category,
           image: formData.image,
+          rating: formData.rating,
           opening_hours: formData.openingHours || null,
           ticket_price: formData.ticketPrice || null,
           facilities: facilities.length > 0 ? facilities : null,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Tempat berhasil diperbarui!');
-      navigate(`/place/${id}`, { replace: true });
-    } catch (error) {
-      console.error('Error updating place:', error);
-      toast.error('Gagal memperbarui tempat');
-    } finally {
-      setLoading(false);
-    }
+        },
+      },
+      {
+        onSuccess: () => {
+          navigate(`/place/${id}`, { replace: true });
+        },
+      }
+    );
   };
 
   const addFacility = () => {
@@ -187,7 +173,9 @@ const EditPlace = () => {
                 <Label htmlFor="category">Kategori *</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value: any) => setFormData({ ...formData, category: value })}
+                  onValueChange={(value: 'cafe' | 'restaurant' | 'mall' | 'historical_place') => 
+                    setFormData({ ...formData, category: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -272,8 +260,45 @@ const EditPlace = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+              <div>
+                <Label htmlFor="rating">Rating (0-5) *</Label>
+                <div className="flex items-center gap-4">
+                  <Input
+                    id="rating"
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={formData.rating}
+                    onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })}
+                    required
+                    className="w-24"
+                  />
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, rating: star })}
+                        className="text-2xl focus:outline-none hover:scale-110 transition-transform"
+                      >
+                        {star <= Math.floor(formData.rating) ? '⭐' : '☆'}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {formData.rating.toFixed(1)} / 5.0
+                  </span>
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                size="lg" 
+                disabled={updatePlaceMutation.isPending}
+              >
+                {updatePlaceMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
               </Button>
             </form>
           </CardContent>

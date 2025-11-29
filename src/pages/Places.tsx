@@ -1,13 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PlaceCard } from '@/components/PlaceCard';
-import { Place, PlaceCategory } from '@/types/place';
 import { categories } from '@/data/categories';
 import { Badge } from '@/components/ui/badge';
-import { fetchPlaces } from '@/lib/supabase-helpers';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Select,
@@ -16,47 +13,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePlaces, useToggleFavorite, useToggleVisited } from '@/hooks/usePlaces';
+import type { Database } from '@/integrations/supabase/types';
+
+type Place = Database['public']['Tables']['places']['Row'];
 
 const Places = () => {
-  const [places, setPlaces] = useState<Place[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('rating');
 
-  useEffect(() => {
-    loadPlaces();
-  }, []);
+  // Use React Query hooks
+  const { data: places = [], isLoading, error } = usePlaces({
+    category: selectedCategory !== 'all' ? selectedCategory : undefined,
+    search: searchQuery,
+  });
 
-  const loadPlaces = async () => {
-    const data = await fetchPlaces();
-    setPlaces(data);
-  };
+  const toggleFavoriteMutation = useToggleFavorite();
+  const toggleVisitedMutation = useToggleVisited();
 
   const filteredAndSortedPlaces = useMemo(() => {
-    let result = [...places];
-
-    // Filter by search
-    if (searchQuery) {
-      result = result.filter(
-        (place) =>
-          place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          place.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          place.address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      result = result.filter((place) => place.category === selectedCategory);
-    }
+    const result = [...places];
 
     // Sort
     switch (sortBy) {
       case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
+        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
       case 'visited':
         result.sort((a, b) => {
@@ -68,48 +53,52 @@ const Places = () => {
     }
 
     return result;
-  }, [places, searchQuery, selectedCategory, sortBy]);
+  }, [places, sortBy]);
 
   const handleToggleVisited = async (id: string) => {
     const place = places.find((p) => p.id === id);
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({
-          visited: !place.visited,
-          visited_date: !place.visited ? new Date().toISOString() : null,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadPlaces();
-      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
-    } catch (error) {
-      console.error('Error toggling visited:', error);
-      toast.error('Gagal memperbarui status');
-    }
+    toggleVisitedMutation.mutate({
+      id,
+      visited: !place.visited,
+    });
   };
 
   const handleToggleFavorite = async (id: string) => {
     const place = places.find((p) => p.id === id);
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({ is_favorite: !place.isFavorite })
-        .eq('id', id);
-
-      if (error) throw error;
-      await loadPlaces();
-      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error('Gagal memperbarui favorit');
-    }
+    toggleFavoriteMutation.mutate(
+      { id, isFavorite: !place.is_favorite },
+      {
+        onSuccess: () => {
+          toast.success(place.is_favorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
+        },
+      }
+    );
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Memuat tempat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="text-center py-16">
+          <p className="text-destructive">Error: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -118,7 +107,7 @@ const Places = () => {
           Tempat di Semarang
         </h1>
         <p className="text-muted-foreground">
-          Jelajahi {places.length} tempat menarik di Kota Lumpia
+          Jelajahi {filteredAndSortedPlaces.length} tempat menarik di Kota Lumpia
         </p>
       </div>
 

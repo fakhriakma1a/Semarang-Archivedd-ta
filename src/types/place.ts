@@ -30,3 +30,8 @@ export interface CategoryInfo {
   icon: string;
   emoji: string;
 }
+
+// Form data type for creating/updating places
+export type PlaceFormData = Omit<Place, 'id'> & {
+  id?: string;
+};

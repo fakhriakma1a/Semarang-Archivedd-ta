@@ -1,7 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Place } from '@/types/place';
+import { useState } from 'react';
 import { categories } from '@/data/categories';
 import { ArrowLeft, Star, MapPin, Clock, DollarSign, Heart, Check, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,114 +18,59 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { usePlace, useDeletePlace, useToggleFavorite, useToggleVisited } from '@/hooks/usePlaces';
 
 const PlaceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [place, setPlace] = useState<Place | null>(null);
-  const [reviews, setReviews] = useState<any[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadPlace();
-  }, [id]);
-
-  const loadPlace = async () => {
-    try {
-      const { data: placeData, error: placeError } = await supabase
-        .from('places')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (placeError) throw placeError;
-
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('place_id', id)
-        .order('created_at', { ascending: false });
-
-      if (placeData) {
-        setPlace({
-          ...placeData,
-          openingHours: placeData.opening_hours,
-          ticketPrice: placeData.ticket_price,
-          isFavorite: placeData.is_favorite,
-          visitedDate: placeData.visited_date,
-        });
-      }
-      setReviews(reviewsData || []);
-    } catch (error) {
-      console.error('Error loading place:', error);
-      toast.error('Gagal memuat data tempat');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use hooks
+  const { data: place, isLoading, error } = usePlace(id);
+  const deleteMutation = useDeletePlace();
+  const toggleFavoriteMutation = useToggleFavorite();
+  const toggleVisitedMutation = useToggleVisited();
 
   const handleToggleVisited = async () => {
     if (!place) return;
     
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({
-          visited: !place.visited,
-          visited_date: !place.visited ? new Date().toISOString() : null,
-        })
-        .eq('id', place.id);
-
-      if (error) throw error;
-
-      setPlace({ ...place, visited: !place.visited });
-      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
-    } catch (error) {
-      console.error('Error toggling visited:', error);
-      toast.error('Gagal memperbarui status');
-    }
+    toggleVisitedMutation.mutate({
+      id: place.id,
+      visited: !place.visited,
+    });
   };
 
   const handleToggleFavorite = async () => {
     if (!place) return;
     
-    try {
-      const { error } = await supabase
-        .from('places')
-        .update({ is_favorite: !place.isFavorite })
-        .eq('id', place.id);
-
-      if (error) throw error;
-
-      setPlace({ ...place, isFavorite: !place.isFavorite });
-      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      toast.error('Gagal memperbarui favorit');
-    }
+    toggleFavoriteMutation.mutate({
+      id: place.id,
+      isFavorite: !place.is_favorite,
+    });
   };
 
   const handleDelete = async () => {
     if (!place) return;
 
-    try {
-      const { error } = await supabase
-        .from('places')
-        .delete()
-        .eq('id', place.id);
-
-      if (error) throw error;
-
-      toast.success('Tempat berhasil dihapus');
-      navigate('/places');
-    } catch (error) {
-      console.error('Error deleting place:', error);
-      toast.error('Gagal menghapus tempat');
-    }
+    deleteMutation.mutate(place.id, {
+      onSuccess: () => {
+        navigate('/places');
+      },
+    });
   };
 
-  if (!place) {
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Memuat detail tempat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !place) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
@@ -170,13 +113,13 @@ const PlaceDetail = () => {
           }}
           className={cn(
             'absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center transition-colors',
-            place.isFavorite
+            place.is_favorite
               ? 'text-red-500 hover:text-red-600'
               : 'text-gray-400 hover:text-red-500'
           )}
         >
           <Heart
-            className={cn('w-5 h-5', place.isFavorite && 'fill-current')}
+            className={cn('w-5 h-5', place.is_favorite && 'fill-current')}
           />
         </button>
 
@@ -224,22 +167,22 @@ const PlaceDetail = () => {
                 </div>
               </div>
 
-              {place.openingHours && (
+              {place.opening_hours && (
                 <div className="flex items-start space-x-3">
                   <Clock className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <p className="font-medium mb-1">Jam Buka</p>
-                    <p className="text-muted-foreground">{place.openingHours}</p>
+                    <p className="text-muted-foreground">{place.opening_hours}</p>
                   </div>
                 </div>
               )}
 
-              {place.ticketPrice && (
+              {place.ticket_price && (
                 <div className="flex items-start space-x-3">
                   <DollarSign className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <p className="font-medium mb-1">Harga</p>
-                    <p className="text-muted-foreground">{place.ticketPrice}</p>
+                    <p className="text-muted-foreground">{place.ticket_price}</p>
                   </div>
                 </div>
               )}
@@ -258,33 +201,8 @@ const PlaceDetail = () => {
               )}
             </div>
 
-            {reviews && reviews.length > 0 && (
-              <>
-                <Separator className="my-6" />
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Review</h2>
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <Card key={review.id} className="bg-muted/50">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="font-semibold">{review.author}</p>
-                            <div className="flex items-center space-x-1 text-amber-500">
-                              <Star className="w-4 h-4 fill-current" />
-                              <span className="font-semibold">{review.rating}</span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {review.comment}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{review.date}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
+            {/* Reviews section - Coming soon */}
+            {/* TODO: Implement reviews feature */}
 
             <div className="mt-6 space-y-3">
               <Button

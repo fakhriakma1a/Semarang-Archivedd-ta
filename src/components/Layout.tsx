@@ -46,8 +46,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
-                <span className="text-white font-bold text-lg">S</span>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                <img src="/LOGOSA.png" alt="Semarang Archived" className="w-8 h-8 object-contain" />
               </div>
               <span className="font-bold text-lg">Semarang Archived</span>
             </Link>

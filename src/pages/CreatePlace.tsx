@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useCreatePlace } from '@/hooks/usePlaces';
 
 const placeSchema = z.object({
   name: z.string().min(1, 'Nama tempat harus diisi').max(200),
@@ -17,22 +17,33 @@ const placeSchema = z.object({
   address: z.string().min(5, 'Alamat harus diisi').max(500),
   category: z.enum(['cafe', 'restaurant', 'mall', 'historical_place']),
   image: z.string().url('URL gambar tidak valid'),
+  rating: z.number().min(0, 'Rating minimal 0').max(5, 'Rating maksimal 5'),
   openingHours: z.string().max(200).optional(),
   ticketPrice: z.string().max(200).optional(),
 });
 
 const CreatePlace = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const createPlaceMutation = useCreatePlace();
   const [facilities, setFacilities] = useState<string[]>([]);
   const [newFacility, setNewFacility] = useState('');
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    address: string;
+    category: 'cafe' | 'restaurant' | 'mall' | 'historical_place';
+    image: string;
+    rating: number;
+    openingHours: string;
+    ticketPrice: string;
+  }>({
     name: '',
     description: '',
     address: '',
-    category: 'cafe' as const,
+    category: 'cafe',
     image: '',
+    rating: 0,
     openingHours: '',
     ticketPrice: '',
   });
@@ -48,11 +59,9 @@ const CreatePlace = () => {
         return;
       }
     }
-
-    setLoading(true);
     
-    try {
-      const { error } = await supabase.from('places').insert({
+    createPlaceMutation.mutate(
+      {
         name: formData.name,
         description: formData.description,
         address: formData.address,
@@ -61,19 +70,14 @@ const CreatePlace = () => {
         opening_hours: formData.openingHours || null,
         ticket_price: formData.ticketPrice || null,
         facilities: facilities.length > 0 ? facilities : null,
-        rating: 0,
-      });
-
-      if (error) throw error;
-
-      toast.success('Tempat berhasil ditambahkan!');
-      navigate('/places');
-    } catch (error) {
-      console.error('Error creating place:', error);
-      toast.error('Gagal menambahkan tempat');
-    } finally {
-      setLoading(false);
-    }
+        rating: formData.rating,
+      },
+      {
+        onSuccess: () => {
+          navigate('/places');
+        },
+      }
+    );
   };
 
   const addFacility = () => {
@@ -143,7 +147,9 @@ const CreatePlace = () => {
                 <Label htmlFor="category">Kategori *</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value: any) => setFormData({ ...formData, category: value })}
+                  onValueChange={(value: 'cafe' | 'restaurant' | 'mall' | 'historical_place') => 
+                    setFormData({ ...formData, category: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -231,8 +237,46 @@ const CreatePlace = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Tambahkan Tempat'}
+              <div>
+                <Label htmlFor="rating">Rating (0-5) *</Label>
+                <div className="flex items-center gap-4">
+                  <Input
+                    id="rating"
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={formData.rating}
+                    onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.0"
+                    required
+                    className="w-24"
+                  />
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, rating: star })}
+                        className="text-2xl focus:outline-none hover:scale-110 transition-transform"
+                      >
+                        {star <= Math.floor(formData.rating) ? '⭐' : '☆'}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {formData.rating.toFixed(1)} / 5.0
+                  </span>
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                size="lg" 
+                disabled={createPlaceMutation.isPending}
+              >
+                {createPlaceMutation.isPending ? 'Menyimpan...' : 'Tambahkan Tempat'}
               </Button>
             </form>
           </CardContent>
