@@ -9,10 +9,24 @@ export const places: Place[] = [
     address: 'Jl. Pemuda No.160, Sekayu, Kec. Semarang Tengah',
     rating: 4.5,
     category: 'historical_place',
-    image: 'https://images.unsplash.com/photo-1651890053473-b25f7e1672dd?q=80',
+    image: 'https://images.unsplash.com/photo-1555400082-33e74d5e7dc9?w=800&q=80',
     openingHours: '08:00 - 21:00',
     ticketPrice: 'Rp 10.000',
     facilities: ['Parkir', 'Toilet', 'WiFi', 'Museum'],
+    reviews: [
+      {
+        author: 'Budi Santoso',
+        rating: 5,
+        comment: 'Bangunan bersejarah yang sangat megah! Arsitekturnya indah dan terawat. Cocok untuk belajar sejarah sambil foto-foto.',
+        date: '15 Januari 2024',
+      },
+      {
+        author: 'Siti Rahayu',
+        rating: 4,
+        comment: 'Tempat yang iconic di Semarang. Sayang pas siang hari cukup panas. Lebih baik datang sore hari.',
+        date: '3 Februari 2024',
+      },
+    ],
   },
   {
     id: '2',
@@ -25,6 +39,26 @@ export const places: Place[] = [
     openingHours: '24 Jam',
     ticketPrice: 'Gratis',
     facilities: ['Parkir', 'Cafe', 'Museum'],
+    reviews: [
+      {
+        author: 'Andi Wijaya',
+        rating: 5,
+        comment: 'Spot foto terbaik di Semarang! Bangunannya vintage banget, banyak cafe dan museum juga. Wajib dikunjungi!',
+        date: '20 Januari 2024',
+      },
+      {
+        author: 'Dewi Kusuma',
+        rating: 4,
+        comment: 'Suasananya enak, apalagi kalau sore hari. Ada banyak spot instagramable di sini.',
+        date: '28 Januari 2024',
+      },
+      {
+        author: 'Rini Aprilia',
+        rating: 5,
+        comment: 'Kota Lama selalu punya pesona tersendiri. Setiap kali ke sini selalu dapat angle foto yang bagus.',
+        date: '5 Februari 2024',
+      },
+    ],
   },
   {
     id: '3',
@@ -37,6 +71,20 @@ export const places: Place[] = [
     openingHours: '08:00 - 17:00',
     ticketPrice: 'Rp 15.000',
     facilities: ['Parkir', 'Toilet', 'Toko Souvenir'],
+    reviews: [
+      {
+        author: 'Herman Tan',
+        rating: 4,
+        comment: 'Kelenteng yang sangat bersejarah. Arsitekturnya menawan dan ada banyak cerita menarik tentang Laksamana Cheng Ho.',
+        date: '10 Januari 2024',
+      },
+      {
+        author: 'Lisa Anggraini',
+        rating: 4,
+        comment: 'Tempat yang tenang dan penuh sejarah. Cocok untuk yang suka wisata religi dan budaya.',
+        date: '18 Februari 2024',
+      },
+    ],
   },
   // Cafes
   {
@@ -49,6 +97,20 @@ export const places: Place[] = [
     image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&q=80',
     openingHours: '10:00 - 22:00',
     facilities: ['WiFi', 'Parkir', 'Indoor', 'Outdoor'],
+    reviews: [
+      {
+        author: 'Farah Diba',
+        rating: 4,
+        comment: 'Konsep cafenya unik banget! Instagramable dan kopinya enak. Harga standar cafe kekinian.',
+        date: '12 Januari 2024',
+      },
+      {
+        author: 'Yoga Pratama',
+        rating: 4,
+        comment: 'Tempatnya asik buat nongkrong. WiFi cepat, cocok buat kerja atau meeting santai.',
+        date: '25 Januari 2024',
+      },
+    ],
   },
   {
     id: '5',
@@ -60,6 +122,20 @@ export const places: Place[] = [
     image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80',
     openingHours: '11:00 - 23:00',
     facilities: ['WiFi', 'Parkir', 'AC', 'Live Music'],
+    reviews: [
+      {
+        author: 'Nisa Amalia',
+        rating: 5,
+        comment: 'Cafe favorit! Dessertnya enak-enak, live musicnya juga bagus. Suasana vintage bikin betah.',
+        date: '8 Januari 2024',
+      },
+      {
+        author: 'Rizky Firmansyah',
+        rating: 4,
+        comment: 'Tempat nongkrong yang nyaman. Menu kopinya variatif dan tempatnya aesthetic.',
+        date: '14 Februari 2024',
+      },
+    ],
   },
   {
     id: '6',
@@ -71,6 +147,20 @@ export const places: Place[] = [
     image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80',
     openingHours: '08:00 - 22:00',
     facilities: ['WiFi', 'AC', 'Coworking Space'],
+    reviews: [
+      {
+        author: 'Dimas Ardianto',
+        rating: 5,
+        comment: 'Specialty coffee terbaik di Semarang! Baristanya ramah dan bisa kasih rekomendasi sesuai selera.',
+        date: '6 Januari 2024',
+      },
+      {
+        author: 'Maya Sari',
+        rating: 4,
+        comment: 'Cocok banget buat WFC. Tempatnya tenang, WiFi kenceng, dan kopinya premium.',
+        date: '22 Januari 2024',
+      },
+    ],
   },
   // Restaurants
   {
@@ -84,6 +174,26 @@ export const places: Place[] = [
     openingHours: '07:00 - 21:00',
     ticketPrice: 'Rp 25.000 - Rp 75.000',
     facilities: ['Parkir', 'Take Away', 'Dine In'],
+    reviews: [
+      {
+        author: 'Pak Agus',
+        rating: 5,
+        comment: 'Lumpia terenak di Semarang! Sudah langganan dari dulu. Isi rebungnya pas dan kuahnya gurih.',
+        date: '2 Januari 2024',
+      },
+      {
+        author: 'Tari Wulandari',
+        rating: 5,
+        comment: 'Lumpia legendaris yang wajib dicoba kalau ke Semarang. Rasanya autentik dan porsinya pas.',
+        date: '16 Januari 2024',
+      },
+      {
+        author: 'Bambang Setiawan',
+        rating: 4,
+        comment: 'Enak banget! Tempatnya sederhana tapi rasanya juara. Worth it!',
+        date: '30 Januari 2024',
+      },
+    ],
   },
   {
     id: '8',
@@ -96,6 +206,20 @@ export const places: Place[] = [
     openingHours: '10:00 - 21:00',
     ticketPrice: 'Rp 15.000 - Rp 40.000',
     facilities: ['Parkir', 'Take Away'],
+    reviews: [
+      {
+        author: 'Rina Safitri',
+        rating: 5,
+        comment: 'Nasi ayamnya enak dan murah! Porsinya besar, cocok untuk mahasiswa.',
+        date: '9 Januari 2024',
+      },
+      {
+        author: 'Arief Budiman',
+        rating: 4,
+        comment: 'Langganan kalau lagi di area Tembalang. Ayamnya empuk dan bumbunya meresap.',
+        date: '21 Januari 2024',
+      },
+    ],
   },
   {
     id: '9',
@@ -108,6 +232,20 @@ export const places: Place[] = [
     openingHours: '08:00 - 16:00',
     ticketPrice: 'Rp 10.000 - Rp 25.000',
     facilities: ['Take Away', 'Dine In'],
+    reviews: [
+      {
+        author: 'Ibu Retno',
+        rating: 5,
+        comment: 'Tahu gimbalnya enak! Bumbu kacangnya gurih dan tidak terlalu pedas. Cocok untuk semua kalangan.',
+        date: '4 Januari 2024',
+      },
+      {
+        author: 'Eko Prasetyo',
+        rating: 4,
+        comment: 'Kuliner khas Semarang yang harus dicoba. Porsinya pas dan harganya terjangkau.',
+        date: '19 Februari 2024',
+      },
+    ],
   },
   // Malls
   {
@@ -120,6 +258,20 @@ export const places: Place[] = [
     image: 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=800&q=80',
     openingHours: '10:00 - 22:00',
     facilities: ['Parkir', 'Cinema', 'Food Court', 'ATM', 'Toilet'],
+    reviews: [
+      {
+        author: 'Putri Ayu',
+        rating: 4,
+        comment: 'Mall yang lengkap di tengah kota. Ada bioskop, food court, dan banyak tenant fashion.',
+        date: '11 Januari 2024',
+      },
+      {
+        author: 'Hendra Gunawan',
+        rating: 4,
+        comment: 'Lokasi strategis dan mudah dijangkau. Parkirnya luas dan fasilitasnya lengkap.',
+        date: '27 Januari 2024',
+      },
+    ],
   },
   {
     id: '11',
@@ -131,6 +283,20 @@ export const places: Place[] = [
     image: 'https://images.unsplash.com/photo-1555529902-5261145633bf?w=800&q=80',
     openingHours: '10:00 - 22:00',
     facilities: ['Parkir', 'Cinema', 'Food Court', 'Kids Playground'],
+    reviews: [
+      {
+        author: 'Sari Indah',
+        rating: 5,
+        comment: 'Mall favorit keluarga! Ada playground buat anak-anak dan pilihan restonya banyak.',
+        date: '7 Januari 2024',
+      },
+      {
+        author: 'Tono Hartono',
+        rating: 4,
+        comment: 'Mall yang lengkap dan nyaman. Cocok untuk weekend bersama keluarga.',
+        date: '13 Februari 2024',
+      },
+    ],
   },
   {
     id: '12',
@@ -142,5 +308,19 @@ export const places: Place[] = [
     image: 'https://images.unsplash.com/photo-1536532184021-da5392b55da1?w=800&q=80',
     openingHours: '10:00 - 22:00',
     facilities: ['Parkir', 'Supermarket', 'Food Court', 'Bank'],
+    reviews: [
+      {
+        author: 'Wulan Sari',
+        rating: 4,
+        comment: 'Mall yang dekat kampus Undip. Cocok untuk mahasiswa, ada banyak pilihan makan yang terjangkau.',
+        date: '15 Januari 2024',
+      },
+      {
+        author: 'Andi Prasetyo',
+        rating: 4,
+        comment: 'Tempatnya nyaman dan fasilitasnya cukup lengkap. Area food courtnya luas.',
+        date: '23 Januari 2024',
+      },
+    ],
   },
 ];

@@ -3,9 +3,10 @@ import { User, MapPin, Heart, Star, Trash2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceCard } from '@/components/PlaceCard';
-import { storage } from '@/lib/storage';
 import { Place } from '@/types/place';
 import { categories } from '@/data/categories';
+import { fetchPlaces, calculateStats } from '@/lib/supabase-helpers';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +19,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { places as initialPlaces } from '@/data/places';
 
 const Profile = () => {
   const [places, setPlaces] = useState<Place[]>([]);
@@ -34,26 +34,63 @@ const Profile = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setPlaces(storage.getPlaces());
-    setStats(storage.getStats());
+  const loadData = async () => {
+    const data = await fetchPlaces();
+    setPlaces(data);
+    setStats(calculateStats(data));
   };
 
-  const handleToggleVisited = (id: string) => {
-    storage.toggleVisited(id);
-    loadData();
+  const handleToggleVisited = async (id: string) => {
+    const place = places.find((p) => p.id === id);
+    if (!place) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({
+          visited: !place.visited,
+          visited_date: !place.visited ? new Date().toISOString() : null,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadData();
+      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
+    } catch (error) {
+      console.error('Error toggling visited:', error);
+      toast.error('Gagal memperbarui status');
+    }
   };
 
-  const handleToggleFavorite = (id: string) => {
-    storage.toggleFavorite(id);
-    loadData();
+  const handleToggleFavorite = async (id: string) => {
+    const place = places.find((p) => p.id === id);
+    if (!place) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({ is_favorite: !place.isFavorite })
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadData();
+      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Gagal memperbarui favorit');
+    }
   };
 
-  const handleClearData = () => {
-    storage.clearData();
-    storage.savePlaces(initialPlaces);
-    loadData();
-    toast.success('Data berhasil direset!');
+  const handleClearData = async () => {
+    try {
+      const { error } = await supabase.from('places').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) throw error;
+      await loadData();
+      toast.success('Semua data berhasil dihapus!');
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      toast.error('Gagal menghapus data');
+    }
   };
 
   const recentVisits = places

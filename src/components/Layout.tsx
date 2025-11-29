@@ -1,9 +1,11 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, MapPin, Dices, User } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, MapPin, Dices, User, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -44,12 +46,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                <img 
-                  src="/LOGOSA.png" 
-                  alt="SA Logo" 
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
+                <span className="text-white font-bold text-lg">S</span>
               </div>
               <span className="font-bold text-lg">Semarang Archived</span>
             </Link>
@@ -73,6 +71,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                   </Link>
                 );
               })}
+              <Button
+                onClick={() => navigate('/create-place')}
+                size="sm"
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Tambahkan Tempat
+              </Button>
             </div>
           </div>
         </div>

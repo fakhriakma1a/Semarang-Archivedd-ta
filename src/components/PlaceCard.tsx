@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { categories } from '@/data/categories';
+import { useNavigate } from 'react-router-dom';
 
 interface PlaceCardProps {
   place: Place;
@@ -18,9 +19,13 @@ export const PlaceCard = ({
   onToggleFavorite,
 }: PlaceCardProps) => {
   const category = categories.find((c) => c.id === place.category);
+  const navigate = useNavigate();
 
   return (
-    <Card className="overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 group">
+    <Card 
+      className="overflow-hidden shadow-card hover:shadow-hover transition-all duration-300 group cursor-pointer"
+      onClick={() => navigate(`/place/${place.id}`)}
+    >
       <div className="relative aspect-video overflow-hidden">
         <img
           src={place.image}
@@ -68,9 +73,6 @@ export const PlaceCard = ({
             <span className="font-semibold">{place.rating}</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-          {place.description}
-        </p>
         <div className="flex items-start text-xs text-muted-foreground mb-3">
           <MapPin className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
           <span className="line-clamp-1">{place.address}</span>

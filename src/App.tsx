@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,9 @@ import { Layout } from "./components/Layout";
 import Splash from "./pages/Splash";
 import Home from "./pages/Home";
 import Places from "./pages/Places";
+import PlaceDetail from "./pages/PlaceDetail";
+import CreatePlace from "./pages/CreatePlace";
+import EditPlace from "./pages/EditPlace";
 import Randomizer from "./pages/Randomizer";
 import Profile from "./pages/Profile";
 import Install from "./pages/Install";
@@ -22,10 +25,12 @@ const App = () => {
     setShowSplash(false);
   };
 
+  // Tampilkan splash screen saat pertama kali load
   if (showSplash) {
     return <Splash onComplete={handleSplashComplete} />;
   }
 
+  // Setelah splash selesai, tampilkan aplikasi utama
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -36,6 +41,9 @@ const App = () => {
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<Layout><Home /></Layout>} />
             <Route path="/places" element={<Layout><Places /></Layout>} />
+            <Route path="/place/:id" element={<PlaceDetail />} />
+            <Route path="/create-place" element={<Layout><CreatePlace /></Layout>} />
+            <Route path="/edit-place/:id" element={<Layout><EditPlace /></Layout>} />
             <Route path="/randomizer" element={<Layout><Randomizer /></Layout>} />
             <Route path="/profile" element={<Layout><Profile /></Layout>} />
             <Route path="/install" element={<Install />} />

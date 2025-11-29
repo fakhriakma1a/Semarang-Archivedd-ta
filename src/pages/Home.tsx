@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Star, Building2, Dices } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceCard } from '@/components/PlaceCard';
-import { places as initialPlaces } from '@/data/places';
-import { storage } from '@/lib/storage';
 import { Place } from '@/types/place';
+import { fetchPlaces, calculateStats } from '@/lib/supabase-helpers';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Home = () => {
   const [places, setPlaces] = useState<Place[]>([]);
@@ -17,26 +18,54 @@ const Home = () => {
   });
 
   useEffect(() => {
-    // Initialize local storage with places data if empty
-    let storedPlaces = storage.getPlaces();
-    if (storedPlaces.length === 0) {
-      storage.savePlaces(initialPlaces);
-      storedPlaces = initialPlaces;
-    }
-    setPlaces(storedPlaces);
-    setStats(storage.getStats());
+    loadPlaces();
   }, []);
 
-  const handleToggleVisited = (id: string) => {
-    storage.toggleVisited(id);
-    setPlaces(storage.getPlaces());
-    setStats(storage.getStats());
+  const loadPlaces = async () => {
+    const data = await fetchPlaces();
+    setPlaces(data);
+    setStats(calculateStats(data));
   };
 
-  const handleToggleFavorite = (id: string) => {
-    storage.toggleFavorite(id);
-    setPlaces(storage.getPlaces());
-    setStats(storage.getStats());
+  const handleToggleVisited = async (id: string) => {
+    const place = places.find((p) => p.id === id);
+    if (!place) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({
+          visited: !place.visited,
+          visited_date: !place.visited ? new Date().toISOString() : null,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadPlaces();
+      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
+    } catch (error) {
+      console.error('Error toggling visited:', error);
+      toast.error('Gagal memperbarui status');
+    }
+  };
+
+  const handleToggleFavorite = async (id: string) => {
+    const place = places.find((p) => p.id === id);
+    if (!place) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({ is_favorite: !place.isFavorite })
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadPlaces();
+      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Gagal memperbarui favorit');
+    }
   };
 
   const featuredPlaces = places
@@ -53,7 +82,7 @@ const Home = () => {
               Jelajahi & Arsipkan Semarang
             </h1>
             <p className="text-lg md:text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-              Simpan pengalaman kunjunganmu di Kota Semarang. Dari kuliner
+              Simpan pengalaman kunjunganmu di Kota Lumpia. Dari kuliner
               legendaris hingga landmark bersejarah.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

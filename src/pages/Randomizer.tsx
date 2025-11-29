@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { storage } from '@/lib/storage';
 import { Place, PlaceCategory } from '@/types/place';
 import { categories } from '@/data/categories';
 import { cn } from '@/lib/utils';
+import { fetchPlaces } from '@/lib/supabase-helpers';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Randomizer = () => {
   const [places, setPlaces] = useState<Place[]>([]);
@@ -19,8 +21,13 @@ const Randomizer = () => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    setPlaces(storage.getPlaces());
+    loadPlaces();
   }, []);
+
+  const loadPlaces = async () => {
+    const data = await fetchPlaces();
+    setPlaces(data);
+  };
 
   const handleToggleCategory = (categoryId: PlaceCategory) => {
     setSelectedCategories((prev) =>
@@ -62,19 +69,48 @@ const Randomizer = () => {
     }, 800);
   };
 
-  const handleToggleVisited = () => {
-    if (currentPlace) {
-      storage.toggleVisited(currentPlace.id);
-      setPlaces(storage.getPlaces());
-      setCurrentPlace(storage.getPlaces().find((p) => p.id === currentPlace.id) || null);
+  const handleToggleVisited = async () => {
+    if (!currentPlace) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({
+          visited: !currentPlace.visited,
+          visited_date: !currentPlace.visited ? new Date().toISOString() : null,
+        })
+        .eq('id', currentPlace.id);
+
+      if (error) throw error;
+      
+      const data = await fetchPlaces();
+      setPlaces(data);
+      setCurrentPlace(data.find((p) => p.id === currentPlace.id) || null);
+      toast.success(currentPlace.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
+    } catch (error) {
+      console.error('Error toggling visited:', error);
+      toast.error('Gagal memperbarui status');
     }
   };
 
-  const handleToggleFavorite = () => {
-    if (currentPlace) {
-      storage.toggleFavorite(currentPlace.id);
-      setPlaces(storage.getPlaces());
-      setCurrentPlace(storage.getPlaces().find((p) => p.id === currentPlace.id) || null);
+  const handleToggleFavorite = async () => {
+    if (!currentPlace) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({ is_favorite: !currentPlace.isFavorite })
+        .eq('id', currentPlace.id);
+
+      if (error) throw error;
+      
+      const data = await fetchPlaces();
+      setPlaces(data);
+      setCurrentPlace(data.find((p) => p.id === currentPlace.id) || null);
+      toast.success(currentPlace.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Gagal memperbarui favorit');
     }
   };
 

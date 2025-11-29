@@ -1,5 +1,12 @@
 export type PlaceCategory = 'cafe' | 'restaurant' | 'mall' | 'historical_place';
 
+export interface Review {
+  author: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
 export interface Place {
   id: string;
   name: string;
@@ -11,6 +18,7 @@ export interface Place {
   openingHours?: string;
   ticketPrice?: string;
   facilities?: string[];
+  reviews?: Review[];
   visited?: boolean;
   visitedDate?: string;
   isFavorite?: boolean;

@@ -3,10 +3,12 @@ import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PlaceCard } from '@/components/PlaceCard';
-import { storage } from '@/lib/storage';
 import { Place, PlaceCategory } from '@/types/place';
 import { categories } from '@/data/categories';
 import { Badge } from '@/components/ui/badge';
+import { fetchPlaces } from '@/lib/supabase-helpers';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -22,8 +24,13 @@ const Places = () => {
   const [sortBy, setSortBy] = useState<string>('rating');
 
   useEffect(() => {
-    setPlaces(storage.getPlaces());
+    loadPlaces();
   }, []);
+
+  const loadPlaces = async () => {
+    const data = await fetchPlaces();
+    setPlaces(data);
+  };
 
   const filteredAndSortedPlaces = useMemo(() => {
     let result = [...places];
@@ -63,14 +70,45 @@ const Places = () => {
     return result;
   }, [places, searchQuery, selectedCategory, sortBy]);
 
-  const handleToggleVisited = (id: string) => {
-    storage.toggleVisited(id);
-    setPlaces(storage.getPlaces());
+  const handleToggleVisited = async (id: string) => {
+    const place = places.find((p) => p.id === id);
+    if (!place) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({
+          visited: !place.visited,
+          visited_date: !place.visited ? new Date().toISOString() : null,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadPlaces();
+      toast.success(place.visited ? 'Ditandai belum dikunjungi' : 'Ditandai sudah dikunjungi');
+    } catch (error) {
+      console.error('Error toggling visited:', error);
+      toast.error('Gagal memperbarui status');
+    }
   };
 
-  const handleToggleFavorite = (id: string) => {
-    storage.toggleFavorite(id);
-    setPlaces(storage.getPlaces());
+  const handleToggleFavorite = async (id: string) => {
+    const place = places.find((p) => p.id === id);
+    if (!place) return;
+
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({ is_favorite: !place.isFavorite })
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadPlaces();
+      toast.success(place.isFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Gagal memperbarui favorit');
+    }
   };
 
   return (
