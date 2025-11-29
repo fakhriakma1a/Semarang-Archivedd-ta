@@ -20,6 +20,9 @@ export const PlaceCard = ({
 }: PlaceCardProps) => {
   const category = categories.find((c) => c.id === place.category);
   const navigate = useNavigate();
+  
+  // Support both isFavorite (camelCase) and is_favorite (snake_case) from database
+  const isFavorite = place.isFavorite ?? ('is_favorite' in place ? (place as Record<string, unknown>).is_favorite as boolean : false);
 
   return (
     <Card 
@@ -47,13 +50,13 @@ export const PlaceCard = ({
           }}
           className={cn(
             'absolute top-2 left-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center transition-colors',
-            place.isFavorite
+            isFavorite
               ? 'text-red-500 hover:text-red-600'
               : 'text-gray-400 hover:text-red-500'
           )}
         >
           <Heart
-            className={cn('w-4 h-4', place.isFavorite && 'fill-current')}
+            className={cn('w-4 h-4', isFavorite && 'fill-current')}
           />
         </button>
       </div>
@@ -82,7 +85,10 @@ export const PlaceCard = ({
             variant={place.visited ? 'secondary' : 'default'}
             size="sm"
             className="w-full"
-            onClick={() => onToggleVisited(place.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVisited(place.id);
+            }}
           >
             {place.visited ? 'Mark as Not Visited' : 'Mark as Visited'}
           </Button>
