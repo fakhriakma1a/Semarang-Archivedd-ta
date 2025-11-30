@@ -337,7 +337,7 @@ Dokumentasi lengkap tersedia di:
 
 **⭐ Star this repo if you find it helpful!**
 
-Made for Tugas Akhir Praktikum Pemrograman Perangkat Bergerak 2025
+Made for Tugas Akhir Praktikum Pemrograman Perangkat Bergerak 2025.
 
 [Report Bug](https://github.com/yourusername/semarang-archived/issues) · [Request Feature](https://github.com/yourusername/semarang-archived/issues)
 
