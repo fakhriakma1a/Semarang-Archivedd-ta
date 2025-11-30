@@ -17,7 +17,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm md:hidden">
         <div className="flex items-center justify-around h-16">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -27,19 +27,42 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'flex flex-col items-center justify-center flex-1 h-full transition-colors',
+                  'flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 relative',
                   isActive
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <Icon className="w-5 h-5 mb-1" />
-                <span className="text-xs font-medium">{item.label}</span>
+                {/* Active indicator bar */}
+                {isActive && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-b-full" />
+                )}
+                <Icon 
+                  className={cn(
+                    'w-5 h-5 mb-1 transition-all duration-200',
+                    isActive && 'scale-110'
+                  )} 
+                />
+                <span className={cn(
+                  'text-xs font-medium transition-all duration-200',
+                  isActive && 'font-semibold'
+                )}>
+                  {item.label}
+                </span>
               </Link>
             );
           })}
         </div>
       </nav>
+
+      {/* Floating Add Button - Mobile Only */}
+      <Button
+        onClick={() => navigate('/create-place')}
+        size="icon"
+        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-lg md:hidden gradient-hero border-0"
+      >
+        <Plus className="w-6 h-6 text-white" />
+      </Button>
 
       {/* Desktop Top Navigation */}
       <nav className="hidden md:block border-b border-border bg-card sticky top-0 z-50">

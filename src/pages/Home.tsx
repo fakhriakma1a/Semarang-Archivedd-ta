@@ -165,20 +165,20 @@ const Home = () => {
       </section>
 
       {/* Quick Randomizer Section */}
-      <section className="py-16 px-4 bg-muted/30">
+      <section className="py-8 md:py-16 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
-          <div className="bg-card rounded-2xl p-8 md:p-12 shadow-card text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full gradient-hero flex items-center justify-center">
-              <Dices className="w-8 h-8 text-white" />
+          <div className="bg-card rounded-2xl p-6 md:p-12 shadow-card text-center">
+            <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 rounded-full gradient-hero flex items-center justify-center">
+              <Dices className="w-6 h-6 md:w-8 md:h-8 text-white" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+            <h2 className="text-xl md:text-3xl font-bold mb-3 md:mb-4">
               Bingung Mau Kemana?
             </h2>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+            <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6 max-w-2xl mx-auto">
               Biarkan kami yang memilihkan! Gunakan fitur randomizer untuk
               mendapatkan rekomendasi tempat secara acak.
             </p>
-            <Button asChild size="lg" className="gradient-hero border-0">
+            <Button asChild size="lg" className="gradient-hero border-0 w-full sm:w-auto">
               <Link to="/randomizer">
                 <Dices className="mr-2 w-4 h-4" />
                 Coba Random Tempat
