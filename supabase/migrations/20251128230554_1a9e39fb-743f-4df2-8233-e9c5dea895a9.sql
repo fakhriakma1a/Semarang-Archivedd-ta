@@ -56,7 +56,7 @@ CREATE POLICY "Anyone can delete places"
   FOR DELETE
   USING (true);
 
--- Create policies for reviews (public read)
+-- Create policies for reviews (public read, write, update, delete)
 CREATE POLICY "Anyone can view reviews"
   ON public.reviews
   FOR SELECT
@@ -66,6 +66,17 @@ CREATE POLICY "Anyone can create reviews"
   ON public.reviews
   FOR INSERT
   WITH CHECK (true);
+
+CREATE POLICY "Anyone can update reviews"
+  ON public.reviews
+  FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+CREATE POLICY "Anyone can delete reviews"
+  ON public.reviews
+  FOR DELETE
+  USING (true);
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()

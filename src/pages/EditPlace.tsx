@@ -95,7 +95,8 @@ const EditPlace = () => {
       },
       {
         onSuccess: () => {
-          navigate(`/place/${id}`, { replace: true });
+          toast.success('Tempat berhasil diperbarui');
+          navigate(-1);
         },
       }
     );

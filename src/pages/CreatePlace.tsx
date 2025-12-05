@@ -239,7 +239,7 @@ const CreatePlace = () => {
 
               <div>
                 <Label htmlFor="rating">Rating (0-5) *</Label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                   <Input
                     id="rating"
                     type="number"
@@ -250,23 +250,25 @@ const CreatePlace = () => {
                     onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })}
                     placeholder="0.0"
                     required
-                    className="w-24"
+                    className="w-full sm:w-24"
                   />
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, rating: star })}
-                        className="text-2xl focus:outline-none hover:scale-110 transition-transform"
-                      >
-                        {star <= Math.floor(formData.rating) ? '⭐' : '☆'}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, rating: star })}
+                          className="text-xl sm:text-2xl focus:outline-none hover:scale-110 transition-transform"
+                        >
+                          {star <= Math.floor(formData.rating) ? '⭐' : '☆'}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      {formData.rating.toFixed(1)} / 5.0
+                    </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {formData.rating.toFixed(1)} / 5.0
-                  </span>
                 </div>
               </div>
 

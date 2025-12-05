@@ -19,6 +19,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { usePlace, useDeletePlace, useToggleFavorite, useToggleVisited } from '@/hooks/usePlaces';
+import { ReviewForm } from '@/components/ReviewForm';
+import { ReviewList } from '@/components/ReviewList';
+import { ReviewStatistics } from '@/components/ReviewStatistics';
 
 const PlaceDetail = () => {
   const { id } = useParams();
@@ -201,9 +204,7 @@ const PlaceDetail = () => {
               )}
             </div>
 
-            {/* Reviews section - Coming soon */}
-            {/* TODO: Implement reviews feature */}
-
+            {/* Action Buttons */}
             <div className="mt-6 space-y-3">
               <Button
                 variant={place.visited ? 'secondary' : 'default'}
@@ -237,6 +238,23 @@ const PlaceDetail = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Reviews Section */}
+        <div className="space-y-6 mt-6">
+          <Separator />
+          
+          {/* Review Statistics */}
+          <ReviewStatistics placeId={place.id} />
+
+          {/* Review Form */}
+          <ReviewForm placeId={place.id} />
+
+          {/* Review List */}
+          <div>
+            <h3 className="text-2xl font-bold mb-4">Semua Review</h3>
+            <ReviewList placeId={place.id} showActions={true} />
+          </div>
+        </div>
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
